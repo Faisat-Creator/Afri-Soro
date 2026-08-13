@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  role          Role      @default(STUDENT)
+  country       String    @default("NG")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  studentProfile StudentProfile?
+  attempts       Attempt[]
+  accounts       Account[]
+  sessions       Session[]
+
+  @@map("users")
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+model StudentProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level     Int      @default(1)
+  xp        Int      @default(0)
+  streak    Int      @default(0)
+  lastSeen  DateTime @default(now())
+  badges    String[] @default([])
+
+  @@map("student_profiles")
+}
+
+model Scenario {
+  id         String     @id @default(cuid())
+  category   Category
+  country    String     // ISO 2-letter code e.g. "NG", "GH", "KE"
+  currency   String     // e.g. "NGN", "GHS", "KES"
+  symbol     String     // e.g. "₦", "₵", "KSh"
+  difficulty Int        // 1–5
+  operation  Operation
+  template   String     // parameterized template string
+  variables  Json       // { quantity: [1,20], price: [1000,50000] }
+  active     Boolean    @default(true)
+  createdAt  DateTime   @default(now())
+
+  questions  Question[]
+
+  @@map("scenarios")
+}
+
+enum Category {
+  MARKET
+  AGRICULTURE
+  TRANSPORT
+  HOUSEHOLD
+  SMALL_BUSINESS
+  FASHION
+  LIVESTOCK
+  CONSTRUCTION
+  SAVINGS
+  COMMUNITY
+}
+
+enum Operation {
+  ADDITION
+  SUBTRACTION
+  MULTIPLICATION
+  DIVISION
+}
+
+model Question {
+  id            String   @id @default(cuid())
+  scenarioId    String
+  scenario      Scenario @relation(fields: [scenarioId], references: [id])
+  prompt        String   // rendered question text
+  correctAnswer Float
+  difficulty    Int
+  operation     Operation
+  params        Json     // the variable values used to generate this question
+  createdAt     DateTime @default(now())
+
+  attempts Attempt[]
+
+  @@map("questions")
+}
+
+model Attempt {
+  id           String   @id @default(cuid())
+  studentId    String
+  student      User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  questionId   String
+  question     Question @relation(fields: [questionId], references: [id])
+  answer       Float
+  correct      Boolean
+  responseTime Int      // milliseconds
+  xpEarned     Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@map("attempts")
+}
+
+model Achievement {
+  id          String @id @default(cuid())
+  key         String @unique
+  name        String
+  description String
+  icon        String
+  requirement Json   // { type: "xp", threshold: 100 }
+
+  @@map("achievements")
+}
+
+// NextAuth required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
