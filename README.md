@@ -14,9 +14,9 @@ AfriSoro combines the traditional Japanese Soroban abacus with African market co
 ## Tech Stack
 
 - **Frontend:** Next.js 14, React, TypeScript, Tailwind CSS, Framer Motion
-- **Backend:** Next.js API Routes, NextAuth.js
+- **Backend:** Express.js, Node.js, TypeScript
 - **Database:** PostgreSQL with Prisma ORM
-- **Authentication:** NextAuth.js with credentials provider
+- **Authentication:** JWT tokens
 
 ## Getting Started
 
@@ -33,52 +33,54 @@ AfriSoro combines the traditional Japanese Soroban abacus with African market co
 # Navigate to project
 cd afrisoro
 
-# Install dependencies
-npm install
+# Install all dependencies (root + frontend + backend)
+npm run install:all
 
-# Set up environment variables
+# Set up backend environment
+cd backend
 cp .env.example .env
-# Edit .env with your DATABASE_URL and generate NEXTAUTH_SECRET
+# Edit .env with your DATABASE_URL and JWT_SECRET
 
 # Initialize database
-npx prisma db push
-npx prisma generate
+npm run db:push
+npm run db:generate
+npm run db:seed
 
-# Seed scenarios and achievements
-npx tsx prisma/seed.ts
+# Set up frontend environment
+cd ../frontend
+cp .env.example .env
+# Edit .env with NEXT_PUBLIC_API_URL (default: http://localhost:5000)
 
-# Run development server
+# Run both frontend and backend
+cd ..
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see the app.
+**Frontend:** [http://localhost:3000](http://localhost:3000)  
+**Backend API:** [http://localhost:5000](http://localhost:5000)
 
 ## Project Structure
 
 ```
 afrisoro/
-├── prisma/
-│   ├── schema.prisma      # Database schema
-│   └── seed.ts            # Seed data
-├── src/
-│   ├── app/               # Next.js 14 app router pages
-│   │   ├── api/           # API routes
-│   │   ├── (auth)/        # Auth pages (login, register)
-│   │   ├── dashboard/     # Student dashboard
-│   │   └── practice/      # Practice session
-│   ├── components/
-│   │   ├── soroban/       # Soroban engine & display
-│   │   ├── scenarios/     # Question cards
-│   │   └── ui/            # UI components
-│   ├── lib/
-│   │   ├── soroban.ts     # Core Soroban logic
-│   │   ├── scenarios.ts   # Question generation
-│   │   ├── adaptive.ts    # Difficulty engine
-│   │   ├── gamification.ts # XP & levels
-│   │   ├── auth.ts        # NextAuth config
-│   │   └── prisma.ts      # Prisma client
-│   └── types/             # TypeScript types
-└── package.json
+├── backend/                # Express.js API server
+│   ├── prisma/
+│   │   ├── schema.prisma   # Database schema
+│   │   └── seed.ts         # Seed data
+│   ├── src/
+│   │   ├── routes/         # API routes
+│   │   ├── middleware/     # Auth middleware
+│   │   ├── lib/            # Utilities (prisma, jwt, scenarios, adaptive, gamification)
+│   │   └── server.ts       # Express server
+│   └── package.json
+├── frontend/               # Next.js 14 app
+│   ├── src/
+│   │   ├── app/            # Next.js pages
+│   │   ├── components/     # React components
+│   │   ├── lib/            # API client, soroban engine
+│   │   └── types/          # TypeScript types
+│   └── package.json
+└── package.json            # Root monorepo config
 ```
 
 ## Usage
@@ -88,20 +90,27 @@ afrisoro/
 3. **Practice** — Solve African market scenarios using the Soroban
 4. **Level Up** — Earn XP, unlock badges, progress from Market Assistant to AfriSoro Champion
 
-## Database Commands
+## Development Commands
 
 ```bash
-# Push schema changes
-npm run db:push
+# Run both frontend and backend
+npm run dev
 
-# Generate Prisma client
-npm run db:generate
+# Run backend only
+npm run dev:backend
 
-# Open Prisma Studio (database GUI)
-npm run db:studio
+# Run frontend only
+npm run dev:frontend
 
-# Seed database
-npx tsx prisma/seed.ts
+# Build for production
+npm run build
+
+# Backend commands (from backend/ directory)
+cd backend
+npm run db:push          # Push schema changes
+npm run db:generate      # Generate Prisma client
+npm run db:studio        # Open Prisma Studio
+npm run db:seed          # Seed database
 ```
 
 ## Deployment
